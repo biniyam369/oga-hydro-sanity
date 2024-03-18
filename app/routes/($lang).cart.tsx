@@ -1,7 +1,7 @@
 import {Await} from '@remix-run/react';
+import type {CartQueryDataReturn} from '@shopify/hydrogen';
 import {
   CartForm,
-  type CartQueryData,
   type SeoHandleFunction,
 } from '@shopify/hydrogen';
 import {ActionFunctionArgs, json} from '@shopify/remix-oxygen';
@@ -35,7 +35,7 @@ export async function action({request, context}: ActionFunctionArgs) {
   invariant(action, 'No cartAction defined');
 
   let status = 200;
-  let result: CartQueryData;
+  let result: CartQueryDataReturn;
 
   switch (action) {
     case CartForm.ACTIONS.LinesAdd:
@@ -76,6 +76,7 @@ export async function action({request, context}: ActionFunctionArgs) {
    */
   const cartId = result.cart.id;
   const headers = cart.setCartId(result.cart.id);
+  const {cart: cartResult, errors} = result;
 
   const redirectTo = formData.get('redirectTo') ?? null;
   if (typeof redirectTo === 'string' && isLocalPath(request, redirectTo)) {
@@ -83,7 +84,8 @@ export async function action({request, context}: ActionFunctionArgs) {
     headers.set('Location', redirectTo);
   }
 
-  const {cart: cartResult, errors} = result;
+  headers.append('Set-Cookie', await context.session.commit());
+
   return json(
     {
       cart: cartResult,
@@ -98,6 +100,8 @@ export async function action({request, context}: ActionFunctionArgs) {
 
 export default function Cart() {
   const rootData = useRootLoaderData();
+  const cartPromise = rootData.cart;
+
 
   return (
     <section
@@ -113,7 +117,7 @@ export default function Cart() {
           </div>
         }
       >
-        <Await resolve={rootData?.cart}>
+        <Await resolve={cartPromise}>
           {(cart) => (
             <>
               {cart && (

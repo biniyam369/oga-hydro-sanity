@@ -22,6 +22,7 @@ import {type LoaderFunctionArgs, redirect} from '@shopify/remix-oxygen';
 export async function loader({request, context, params}: LoaderFunctionArgs) {
   const {cart} = context;
   const {lines} = params;
+  if (!lines) return redirect('/cart');
   const linesMap = lines?.split(',').map((line) => {
     const lineDetails = line.split(':');
     const variantId = lineDetails[0];
